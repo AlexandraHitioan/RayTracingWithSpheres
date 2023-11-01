@@ -139,7 +139,7 @@ namespace rt
             const int width = 800;
             const int height = 600;
 
-           //Go and approximate middle of the lines
+           //Go and approximate middle of the lines and then continue with the ray tracing
             var middle = new Vector(0.0, 0.0, 100.0);
             var up = new Vector(-Math.Sqrt(0.125), -Math.Sqrt(0.75), Math.Sqrt(0.125)).Normalize();
             var first = (middle ^ up).Normalize();
