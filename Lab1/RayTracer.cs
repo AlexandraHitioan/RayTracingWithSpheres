@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Design.Serialization;
 using System.Runtime.InteropServices;
 
 namespace rt
@@ -47,21 +48,32 @@ namespace rt
         private bool IsLit(Vector point, Light light)
         {
             // ADD CODE HERE: Detect whether the given point has a clear line of sight to the
-            var line = new Line(light.Position, point);  //creates the ray of light basically
-            var intersection = FindFirstIntersection(line, 0, 1000000); 
-            if (!intersection.Valid || !intersection.Visible)
+            var ray = new Line(light.Position, point); //a ray pointing from our light source towards our point
+            var inter = FindFirstIntersection(ray, 0, 100000); //first inter between the ray and any object in a range of [0,100000] surface
+            if (inter.Valid == false)
+            {
+                return true; //we have a clear line of sight
+            }
+            if (inter.Visible == false)
+            {
+                return true; //the object is either transparent or doesn't exist
+            }
+
+            if (inter.T > (light.Position - point).Length() - 0.001) // we check wether the dist between the source of light and the inter point is greater than the one between the light and the given point
+            {
                 return true;
-            return intersection.T > (light.Position - point).Length() - 0.001;
-            
-            return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public void Render(Camera camera, int width, int height, string filename)
         {
-            var background = new Color();
-            var viewParallel = (camera.Up ^ camera.Direction).Normalize();
-
-            var image = new Image(width, height);
+                var background = new Color();
+                var viewParallel = (camera.Up ^ camera.Direction).Normalize();
+                var image = new Image(width, height);
 
             var vecW = camera.Direction * camera.ViewPlaneDistance;
             for (var i = 0; i < width; i++)
@@ -70,43 +82,45 @@ namespace rt
                 {
                     // ADD CODE HERE: Implement pixel color calculation
                     image.SetPixel(i, j, background);
-                    var pointOnViewPlane = camera.Position + camera.Direction * camera.ViewPlaneDistance + 
+                    var pixelAsPoint = camera.Position + camera.Direction * camera.ViewPlaneDistance + 
                                            (camera.Up ^ camera.Direction) * ImageToViewPlane(i, width, camera.ViewPlaneWidth) + 
-                                           camera.Up * ImageToViewPlane(j, height, camera.ViewPlaneHeight);
-                    var ray = new Line(camera.Position, pointOnViewPlane);
-                    var intersection = FindFirstIntersection(ray, camera.FrontPlaneDistance, camera.BackPlaneDistance);
-                    if (intersection.Valid && intersection.Visible)
+                                           camera.Up * ImageToViewPlane(j, height, camera.ViewPlaneHeight); //the ray starting from the camera position towards the point we just calculated
+                    var lightRay = new Line(camera.Position, pixelAsPoint);//the ray starting from the camera position towards the point we just calculated
+                    var inter = FindFirstIntersection(lightRay, camera.FrontPlaneDistance, camera.BackPlaneDistance); // determines the first intersection point between the ray and other potential objects
+                    if (inter.Valid==true && inter.Visible==true)
                     {
-                        var color = new Color();
+                        var pixelColor = new Color(); //color of current pixel
                         foreach (var light in lights)
                         {
-                            var colorFromLight = new Color();
-                            colorFromLight += intersection.Geometry.Material.Ambient * light.Ambient;
-                            if (IsLit(intersection.Position, light))
+                            var lightColor = new Color(); //the shade of the lights that affects the color of the current pixel
+                            lightColor += inter.Geometry.Material.Ambient * light.Ambient; //adding the ambient light
+                            if (IsLit(inter.Position, light)) //checking wether the point is directly hit by the light
                             {
-                                var v = intersection.Position;
-                                var e = (camera.Position - v).Normalize();
-                                var n = ((Sphere) intersection.Geometry).Normal(intersection.Position);
-                                var t = (light.Position - v).Normalize();
-                                var r = (n * (n * t) * 2 - t).Normalize();
-                                if (n * t > 0)
-                                    colorFromLight += intersection.Geometry.Material.Diffuse * light.Diffuse * (n * t);
-                                if (e * r > 0)
-                                    colorFromLight += intersection.Geometry.Material.Specular * light.Specular *
-                                                      Math.Pow(e * r, intersection.Geometry.Material.Shininess);
-                                colorFromLight *= light.Intensity;
+                                var interPoint = inter.Position; //v the position of the intersection point
+                                var vCamInter = (camera.Position - interPoint).Normalize(); //e normal vector pointing from camera to intersection point
+                                var dirLightInter = ((Sphere) inter.Geometry).Normal(inter.Position);//n surface normal vector pointing from light source to inter point
+                                var vLightInter = (light.Position - interPoint).Normalize(); // t normal vector pointing from light source to inter point
+                                var reflLight = (dirLightInter * (dirLightInter * vLightInter) * 2 - vLightInter).Normalize(); //r unit vector of reflected light
+                                
+                                if (dirLightInter * vLightInter > 0)//we check wether the light is hitting the object
+                                    lightColor += inter.Geometry.Material.Diffuse * light.Diffuse * (dirLightInter * vLightInter);
+                                
+                                if (vCamInter * reflLight > 0)//we check if the reflection of the light is visible
+                                    lightColor += inter.Geometry.Material.Specular * light.Specular *
+                                                      Math.Pow(vCamInter * reflLight, inter.Geometry.Material.Shininess);
+                                lightColor *= light.Intensity; //amplyifying the color by intensity
                             }
-                            color += colorFromLight;
+
+                            pixelColor += lightColor; //we add the colors from the light sources to the overall color of the pixel
                         }
-                        image.SetPixel(i, j, color);
+                        image.SetPixel(i, j, pixelColor);
                     }
-                    else image.SetPixel(i, j, background);
+                    else image.SetPixel(i, j, background); //if there is no intersection with an object, the pixel will just get the bg color
                 }
-                    
-                    
-                }
-            image.Store(filename);
+                
             }
-        
+            image.Store(filename);
         }
+        
     }
+}
