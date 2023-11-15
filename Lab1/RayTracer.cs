@@ -99,7 +99,7 @@ namespace rt
                                 var interPoint = inter.Position; // the position of the intersection point
                                 var vCamInter = (camera.Position - interPoint).Normalize(); // normal vector pointing from camera to intersection point
                                 var dirLightInter = ((Sphere) inter.Geometry).Normal(inter.Position);// surface normal vector pointing from light source to inter point
-                                var vLightInter = (light.Position - interPoint).Normalize(); //  normal vector pointing from light source to inter point
+                                var vLightInter = (light.Position - interPoint).Normalize(); // normal vector pointing from light source to inter point
                                 var reflLight = (dirLightInter * (dirLightInter * vLightInter) * 2 - vLightInter).Normalize(); // unit vector of reflected light
                                 
                                 if (dirLightInter * vLightInter > 0)//we check wether the light is hitting the object
