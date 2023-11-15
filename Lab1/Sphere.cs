@@ -23,7 +23,7 @@ namespace rt
             if (delta < 0.001) //check wether there are no real solutions -> we have no intersection
                 return new Intersection(false, false, this, line, 0);
             var sol1 = (-b - Math.Sqrt(delta))/2.0*a;
-            var sol2 = (-b + Math.Sqrt(delta))/2.0*a;
+            var sol2 = (-b + Math.Sqrt(delta))/2.0*a; //calculated the two solutions for the discriminant
             var validT1 = sol1 >= minDist && sol1 <= maxDist;
             var validT2 = sol2 >= minDist && sol2 <= maxDist;
             if (!(sol1 >= minDist && sol1 <= maxDist) && !(sol2 >= minDist && sol2 <= maxDist)) //no solution is valid->no intersection point
