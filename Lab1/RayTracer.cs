@@ -96,11 +96,11 @@ namespace rt
                             lightColor += inter.Geometry.Material.Ambient * light.Ambient; //adding the ambient light
                             if (IsLit(inter.Position, light)) //checking wether the point is directly hit by the light
                             {
-                                var interPoint = inter.Position; //v the position of the intersection point
-                                var vCamInter = (camera.Position - interPoint).Normalize(); //e normal vector pointing from camera to intersection point
-                                var dirLightInter = ((Sphere) inter.Geometry).Normal(inter.Position);//n surface normal vector pointing from light source to inter point
-                                var vLightInter = (light.Position - interPoint).Normalize(); // t normal vector pointing from light source to inter point
-                                var reflLight = (dirLightInter * (dirLightInter * vLightInter) * 2 - vLightInter).Normalize(); //r unit vector of reflected light
+                                var interPoint = inter.Position; // the position of the intersection point
+                                var vCamInter = (camera.Position - interPoint).Normalize(); // normal vector pointing from camera to intersection point
+                                var dirLightInter = ((Sphere) inter.Geometry).Normal(inter.Position);// surface normal vector pointing from light source to inter point
+                                var vLightInter = (light.Position - interPoint).Normalize(); //  normal vector pointing from light source to inter point
+                                var reflLight = (dirLightInter * (dirLightInter * vLightInter) * 2 - vLightInter).Normalize(); // unit vector of reflected light
                                 
                                 if (dirLightInter * vLightInter > 0)//we check wether the light is hitting the object
                                     lightColor += inter.Geometry.Material.Diffuse * light.Diffuse * (dirLightInter * vLightInter);
